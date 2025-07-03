@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+# チュートリアル：https://fastapi.tiangolo.com/ja/tutorial/
+
+from fastapi import FastAPI, Query
 from typing import Union
 from pydantic import BaseModel
 
@@ -67,3 +69,19 @@ def update_item(item_id: int, item: Item, q: Union[str, None] = None):
     if q:
         result.update({"q": q})
     return result
+
+# バリデーションは以下のように設定できる
+
+
+@app.get("/items/")
+async def read_items(
+    q: Union[str, None] = Query(
+        default=None, min_length=3, max_length=50, pattern="^fixedquery$",
+        title="Query string",
+        description="説明をここに書ける",
+    ),  # デフォルトを指定しなければ必須になる
+):
+    results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+    if q:
+        results.update({"q": q})
+    return results
