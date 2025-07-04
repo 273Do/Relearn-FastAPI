@@ -1,8 +1,8 @@
 # チュートリアル：https://fastapi.tiangolo.com/ja/tutorial/
 
+from typing import Union, Annotated, Literal
 from fastapi import FastAPI, Query
-from typing import Union
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 app = FastAPI()
 
@@ -70,14 +70,14 @@ def update_item(item_id: int, item: Item, q: Union[str, None] = None):
         result.update({"q": q})
     return result
 
-# バリデーションは以下のように設定できる
+# クエリパラメータのバリデーションは以下のように設定できる
 
 
 @app.get("/items/")
 async def read_items(
     q: Union[str, None] = Query(
         default=None, min_length=3, max_length=50, pattern="^fixedquery$",
-        title="Query string",
+        title="openapiのタイトル",
         description="説明をここに書ける",
     ),  # デフォルトを指定しなければ必須になる
 ):
@@ -85,3 +85,20 @@ async def read_items(
     if q:
         results.update({"q": q})
     return results
+
+# クエリパラメータにPydanticモデルを使用できる
+
+
+class FilterParams(BaseModel):
+    limit: int = Field(100, gt=0, le=100)
+    offset: int = Field(0, ge=0)
+    order_by: Literal["created_at", "updated_at"] = "created_at"
+    tags: list[str] = []
+
+
+@app.get("/items2/")
+def read_items2(filter_query: Annotated[FilterParams, Query(default={})]):
+    return filter_query
+
+# パスパラメータのバリデーションはfastapiからPathをインポート
+# クエリパラメータと同様に設定できる
