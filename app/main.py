@@ -1,7 +1,7 @@
 # チュートリアル：https://fastapi.tiangolo.com/ja/tutorial/
 
 from typing import Union, Annotated, Literal
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Body
 from pydantic import BaseModel, Field
 
 app = FastAPI()
@@ -102,3 +102,50 @@ def read_items2(filter_query: Annotated[FilterParams, Query(default={})]):
 
 # パスパラメータのバリデーションはfastapiからPathをインポート
 # クエリパラメータと同様に設定できる
+
+# ボディのバリデーションはPydanticモデルを使用して行う
+
+
+class Item(BaseModel):
+    name: str
+    description: Union[str, None] = None
+    price: float
+    tax: Union[float, None] = None
+
+
+class User(BaseModel):
+    username: str
+    full_name: Union[str, None] = None
+
+
+@app.put("/items2/{item_id}")
+def update_item2(
+    *,
+    item_id: int,
+    item: Item,
+    user: User,
+    importance: int = Body(gt=0),
+    q: Union[str, None] = None,
+):
+    results = {"item_id": item_id, "item": item,
+               "user": user, "importance": importance}
+    if q:
+        results.update({"q": q})
+    return results
+
+
+class Item(BaseModel):
+    name: str
+    # Fieldを使うことで、OpenAPIのドキュメントにタイトルや説明を追加できる
+    description: Union[str, None] = Field(
+        default=None, title="The description of the item", max_length=300
+    )
+    price: float = Field(
+        gt=0, description="The price must be greater than zero")
+    tax: Union[float, None] = None
+
+
+@app.put("/items/{item_id}")
+def update_item3(item_id: int, item: Item = Body(embed=True)):
+    results = {"item_id": item_id, "item": item}
+    return results
